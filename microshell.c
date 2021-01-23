@@ -44,7 +44,7 @@ char	*ft_strdup(char *str)
 	char *copy;
 	int i = 0;
 
-	copy = malloc(ft_strlen(str) * sizeof(char));
+	copy = malloc((ft_strlen(str) + 1) * sizeof(char));
 	if (!copy)
 		return (NULL);
 	while (str[i] != '\0')
@@ -137,18 +137,17 @@ int		exec_cmd(t_list *cmd, char **env)
 	if (cmd->type == TYPE_PIPE || (cmd->last && cmd->last->type == TYPE_PIPE))
 	{
 		pipe_open = 1;
-		if (pipe(cmd->pipes))
-			return (exit_fatal());
+		pipe(cmd->pipes);
 	}
 	pid = fork();
 	if (pid < 0)
 		return (exit_fatal());
 	else if (pid == 0)
 	{
-		if (cmd->type == TYPE_PIPE && dup2(cmd->pipes[1], 1) < 0)
-			return (exit_fatal());
-		if (cmd->last && cmd->last->type == TYPE_PIPE && dup2(cmd->last->pipes[0], 0) < 0)
-			return (exit_fatal());
+		if (cmd->type == TYPE_PIPE)
+			dup2(cmd->pipes[1], 1);
+		if (cmd->last && cmd->last->type == TYPE_PIPE)
+			dup2(cmd->last->pipes[0], 0);
 		if ((ret = execve(cmd->args[0], cmd->args, env)) < 0)
 		{
 			show_error("error: cannot execute ");
